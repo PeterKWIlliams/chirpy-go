@@ -19,29 +19,28 @@ func removeProfanity(text string) string {
 	return text
 }
 
-func HandlerPost(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiCfg) HandlerPost(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body string `json:"body"`
 	}
 	params := parameters{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
-	length := len(params.Body)
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-	if length > 140 {
+	if len(params.Body) > 140 {
 		RespondWithError(w, http.StatusBadRequest, "body is too long")
 		return
 	}
 
-	payload := struct {
-		CleanedBody string `json:"cleaned_body"`
-	}{
-		CleanedBody: removeProfanity(params.Body),
+	chirp, error := cfg.Database.CreateChirp(removeProfanity(params.Body))
+	if error != nil {
+		RespondWithError(w, http.StatusBadRequest, "There was an error creating the chirp")
+		return
 	}
-	RespondWithJSON(w, http.StatusOK, payload)
+	RespondWithJSON(w, 201, chirp)
 }
 
 func RespondWithError(w http.ResponseWriter, code int, msg string) {

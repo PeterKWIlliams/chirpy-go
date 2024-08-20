@@ -29,17 +29,15 @@ func NewDB(path string) (*DB, error) {
 		fmt.Println("Error getting project root path")
 		return nil, err
 	}
+	filePath := filepath.Join(projectRoot, path)
 
-	filePath := filepath.Join(projectRoot, "example.txt")
-	file, err := os.Create(filePath)
+	db := &DB{mux: &sync.RWMutex{}, path: filePath}
+
+	err = db.ensureDB()
 	if err != nil {
-		fmt.Println("Error creating file")
-		return nil, err
+		return &DB{}, nil
 	}
-
-	defer file.Close()
-
-	return &DB{mux: &sync.RWMutex{}, path: filePath}, nil
+	return db, nil
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
@@ -70,14 +68,33 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	return chirp, nil
 }
 
-func (db *DB) ensureDB() {
+func (db *DB) GetChirps() ([]Chirp, error) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	chirps := make([]Chirp, 0)
+
+	data, err := db.loadDB()
+	if err != nil {
+		log.Println("Error loading db")
+		return nil, err
+	}
+	for _, chirp := range data.Chirps {
+		chirps = append(chirps, chirp)
+	}
+
+	return chirps, nil
+}
+
+func (db *DB) ensureDB() error {
 	if _, err := os.Stat(db.path); os.IsNotExist(err) {
 		dbStructure := DBStructure{Chirps: make(map[int]Chirp)}
 		err = db.writeDb(dbStructure)
 		if err != nil {
 			log.Println("Error creating db")
+			return err
 		}
 	}
+	return nil
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
@@ -85,12 +102,12 @@ func (db *DB) loadDB() (DBStructure, error) {
 	file, err := os.ReadFile(db.path)
 	if err != nil {
 		log.Println("Error reading file")
-		return DBStructure{}, nil
+		return DBStructure{}, err
 	}
 	err = json.Unmarshal(file, &data)
 	if err != nil {
 		log.Println("Error marshalling json")
-		return DBStructure{}, nil
+		return DBStructure{}, err
 	}
 	return data, nil
 }

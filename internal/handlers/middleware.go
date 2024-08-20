@@ -12,10 +12,3 @@ func (cfg *ApiCfg) MiddlewareMetricsInc(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
-func (cfg *ApiCfg) MiddlewarePostMetrics(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.PostChirpHits++
-		next.ServeHTTP(w, r)
-	})
-}

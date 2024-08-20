@@ -3,11 +3,13 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/PeterKWIlliams/chirpy-go/internal/database"
 )
 
 type ApiCfg struct {
 	FileserverHits int
-	PostChirpHits  int
+	Database       *database.DB
 }
 
 func (cfg *ApiCfg) HandlerReset(w http.ResponseWriter, r *http.Request) {
@@ -43,4 +45,15 @@ func (cfg *ApiCfg) HandlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(html))
+}
+
+func (cfg *ApiCfg) HandlerGetChirps(w http.ResponseWriter, r *http.Request) {
+	chirps, err := cfg.Database.GetChirps()
+	if err != nil {
+		fmt.Println("Error getting chirps")
+
+		RespondWithError(w, http.StatusInternalServerError, "There was an error getting the chirps")
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, chirps)
 }
