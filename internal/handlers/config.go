@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/PeterKWIlliams/chirpy-go/internal/database"
 )
@@ -45,6 +46,22 @@ func (cfg *ApiCfg) HandlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(html))
+}
+
+func (cfg *ApiCfg) GetChirp(w http.ResponseWriter, r *http.Request) {
+	chirpIdString := r.PathValue("chirpId")
+	id, err := strconv.Atoi(chirpIdString)
+	fmt.Println("this is the id", chirpIdString)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	chirp, err := cfg.Database.GetChirp(id)
+	if err != nil {
+		RespondWithError(w, 404, "there was an error getting the chirp")
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, chirp)
 }
 
 func (cfg *ApiCfg) HandlerGetChirps(w http.ResponseWriter, r *http.Request) {

@@ -11,6 +11,7 @@ import (
 
 func NewServer() *http.Server {
 	path, _ := filepath.Abs("web/")
+
 	databases, err := database.NewDB("database.json")
 	if err != nil {
 		fmt.Println("there was an eror creating the database")
@@ -22,12 +23,15 @@ func NewServer() *http.Server {
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(path)))
 	mux := http.NewServeMux()
 	mux.Handle("/app/*", apiCfg.MiddlewareMetricsInc(handler))
+	mux.HandleFunc("GET /api/healthz", handlers.HandlerHealhtz)
+	mux.HandleFunc("/api/reset", apiCfg.HandlerReset)
 	mux.HandleFunc("POST /api/chirps", apiCfg.HandlerPost)
 	mux.HandleFunc("GET /api/chirps", apiCfg.HandlerGetChirps)
-	mux.HandleFunc("GET /api/healthz", handlers.HandlerHealhtz)
-	mux.HandleFunc("GET /admin/metrics/", apiCfg.HandlerMetrics)
-	mux.HandleFunc("/api/reset", apiCfg.HandlerReset)
+	mux.HandleFunc("GET /api/chirps/{chirpId}", apiCfg.GetChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.HandlerPostUser)
+	mux.HandleFunc("POST /api/login", apiCfg.HandlerLogin)
 
+	mux.HandleFunc("GET /admin/metrics/", apiCfg.HandlerMetrics)
 	return &http.Server{
 		Addr:    ":8080",
 		Handler: mux,
