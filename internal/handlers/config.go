@@ -11,6 +11,7 @@ import (
 type ApiCfg struct {
 	FileserverHits int
 	Database       *database.DB
+	JWTSecret      string
 }
 
 func (cfg *ApiCfg) HandlerReset(w http.ResponseWriter, r *http.Request) {
