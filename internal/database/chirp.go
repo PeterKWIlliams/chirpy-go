@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, authorId int) (Chirp, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
@@ -23,7 +23,7 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	}
 
 	ID := len(dbData.Chirps) + 1
-	chirp := Chirp{ID: ID, Body: body}
+	chirp := Chirp{ID: ID, Body: body, AuthorId: authorId}
 	dbData.Chirps[ID] = chirp
 
 	err = db.writeDb(dbData)
@@ -65,4 +65,21 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 		return Chirp{}, fmt.Errorf("Chirp with id %d does not exist", id)
 	}
 	return chirp, nil
+}
+
+func (db *DB) GetUserChirps(userId int) ([]Chirp, error) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	data, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+	chirps := make([]Chirp, 0)
+	for _, chirp := range data.Chirps {
+		if chirp.AuthorId == userId {
+			chirps = append(chirps, chirp)
+		}
+	}
+	return chirps, nil
 }

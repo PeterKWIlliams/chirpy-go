@@ -20,7 +20,8 @@ func NewServer() *http.Server {
 	apiCfg := &handlers.ApiCfg{
 		FileserverHits: 0,
 		Database:       databases,
-		JWTSecret:      os.Getenv("JWT_TOKEN"),
+		JWTSecret:      os.Getenv("JWT_SECRET"),
+		PolkaKey:       os.Getenv("POLKA_KEY"),
 	}
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(path)))
 	mux := http.NewServeMux()
@@ -28,11 +29,16 @@ func NewServer() *http.Server {
 
 	mux.HandleFunc("POST /api/chirps", apiCfg.HandlerPost)
 	mux.HandleFunc("GET /api/chirps", apiCfg.HandlerGetChirps)
-	mux.HandleFunc("GET /api/chirps/{chirpId}", apiCfg.GetChirp)
+	mux.HandleFunc("GET /api/chirps/{chirpId}", apiCfg.HandlerGetChirp)
+	mux.HandleFunc("DELETE /api/chirps/{chirpId}", apiCfg.HandlerDeleteChirp)
+
+	mux.HandleFunc("POST /api/refresh", apiCfg.HandlerRefreshToken)
+	mux.HandleFunc("POST /api/revoke", apiCfg.HandlerRevokeToken)
 
 	mux.HandleFunc("POST /api/login", apiCfg.HandlerLogin)
 	mux.HandleFunc("POST /api/users", apiCfg.HandlerPostUser)
 	mux.HandleFunc("PUT /api/users", apiCfg.HandlerUpdateUser)
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.HandlerUpgradeMembership)
 
 	mux.HandleFunc("/api/reset", apiCfg.HandlerReset)
 	mux.HandleFunc("GET /api/healthz", handlers.HandlerHealhtz)

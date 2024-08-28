@@ -17,7 +17,7 @@ func (db *DB) CreateUser(email string, password []byte) (User, error) {
 		return User{}, errors.New("user already exists")
 	}
 	ID := len(dbData.Users) + 1
-	user := User{ID: ID, Email: email, Password: password}
+	user := User{ID: ID, Email: email, Password: password, IsChirpyRed: false}
 	dbData.Users[ID] = user
 	dbData.UserEmail[email] = ID
 
@@ -50,7 +50,28 @@ func (db *DB) GetUserByEmail(email string) (User, error) {
 	return user, nil
 }
 
-func (db *DB) UpdateUser(id int, email string, password []byte) (User, error) {
+func (db *DB) UpgradeUser(id int) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	dbData, err := db.loadDB()
+	if err != nil {
+		return errors.New("error loading db")
+	}
+	user, ok := dbData.Users[id]
+	if !ok {
+		return errors.New("no user with that id")
+	}
+	user.IsChirpyRed = true
+	dbData.Users[id] = user
+	err = db.writeDb(dbData)
+	if err != nil {
+		log.Println("Error writing to db when upgrading user")
+		return errors.New("error writing to db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateUser(id int, email string, password []byte, tokenString string) (User, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	dbData, err := db.loadDB()

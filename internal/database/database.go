@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 type DB struct {
@@ -15,20 +16,29 @@ type DB struct {
 }
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	ID       int    `json:"id"`
+	Body     string `json:"body"`
+	AuthorId int    `json:"author_id"`
 }
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password []byte `json:"password"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Password    []byte `json:"password"`
+	IsChirpyRed bool   `json:"isChirpyRed"`
+}
+
+type RefreshToken struct {
+	UserId    int       `json:"userId"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type DBStructure struct {
-	Chirps    map[int]Chirp  `json:"chirps"`
-	Users     map[int]User   `json:"users"`
-	UserEmail map[string]int `json:"userEmail"`
+	Chirps        map[int]Chirp           `json:"chirps"`
+	Users         map[int]User            `json:"users"`
+	UserEmail     map[string]int          `json:"userEmail"`
+	RefreshTokens map[string]RefreshToken `json:"refreshTokens"`
 }
 
 func NewDB(path string) (*DB, error) {
@@ -51,9 +61,10 @@ func NewDB(path string) (*DB, error) {
 func (db *DB) ensureDB() error {
 	if _, err := os.Stat(db.path); os.IsNotExist(err) {
 		dbStructure := DBStructure{
-			Chirps:    make(map[int]Chirp),
-			Users:     make(map[int]User),
-			UserEmail: make(map[string]int),
+			Chirps:        make(map[int]Chirp),
+			Users:         make(map[int]User),
+			UserEmail:     make(map[string]int),
+			RefreshTokens: make(map[string]RefreshToken),
 		}
 		err = db.writeDb(dbStructure)
 		if err != nil {
